@@ -1,0 +1,83 @@
+---
+title: "NMR Food (Short)"
+format:
+  html: 
+    toc: false
+    code-fold: show
+  docx: default
+execute:
+  echo: false
+  warning: false
+  message: false
+  cache: true
+---
+
+
+## Setup & Data
+
+```{r}
+#| label: setup
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+# Path to your Excel (prefer a relative path like "data/CollectionNMRFood.xlsx")
+xlsx_path <- "data/CollectionNMRFood.xlsx"
+
+raw <- read_excel(xlsx_path, sheet = "datidef") |>
+  filter(ppm >= 0, ppm < 200)
+
+# Matrix of samples only (drop ppm), rownames = ppm
+mat <- as.data.frame(raw[,-1])
+rownames(mat) <- raw$ppm
+
+# Column-normalize (each sample sums to 1)
+cs <- colSums(mat, na.rm = TRUE)
+norm <- sweep(mat, 2, cs, `/`) |>
+  tibble::rownames_to_column(var = "ppm") |>
+  mutate(ppm = as.numeric(ppm))
+
+  #| label: classes
+classes <- cut(
+norm$ppm,
+breaks = c(-Inf, 45, 60, 90, 110, 145, 160, Inf),
+labels = c("Alkyl C",
+"Methoxyl N-Alkyl-C",
+"O-alkyl-C",
+"Di-O-alkyl C",
+"H- C- sub. aromatic C",
+"O- sub. aromatic  C",
+"Carbonyl C"),
+right = TRUE
+)
+
+norm <- mutate(norm, MolecularClasses = classes)
+
+# Sum by class (keep sample columns only)
+
+summed <- norm |>
+group_by(MolecularClasses) |>
+summarise(across(where(is.numeric) & !ppm, ~ sum(.x, na.rm = TRUE))) |>
+ungroup()
+
+# Order samples by O-alkyl-C contribution (if present)
+
+sample_cols <- setdiff(names(summed), "MolecularClasses")
+if ("O-alkyl-C" %in% summed$MolecularClasses) {
+oidx <- which(summed$MolecularClasses == "O-alkyl-C")
+ord  <- order(-unlist(summed[oidx, sample_cols]))
+summed <- select(summed, MolecularClasses, all_of(sample_cols[ord]))
+}
+
+#| label: composition
+#| fig-width: 8
+#| fig-height: 4
+long <- pivot_longer(summed, -MolecularClasses, names_to = "sample", values_to = "value")
+
+ggplot(long, aes(sample, value, fill = MolecularClasses)) +
+geom_bar(stat = "identity", position = "fill", color = "black", linewidth = 0.1) +
+scale_y_continuous(labels = scales::percent) +
+labs(x = NULL, y = NULL) +
+theme_classic() +
+theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
