@@ -1,0 +1,15 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+file|stem|b7a537e2ae5c9159|704b1be70359f352|2c530c1562a7fbd1|1735323524|data/CollectionNMRFood.xlsx|t20253.681496555s|s8639854b|8639854|file|local|vector|||0.02||
+build_class_sums|function|0499c2057576d01c
+class_sum|stem||26497b86f0236195|f2c70e29ee58ecfb|-548470213||t20381.5603613662s||0|rds|local|vector|||0.04||Column 'MolecularClasses' not found.
+plot_nmr_spectra|function|34b2a5b97af123d7
+report|stem|a037e72d7fb9f1b3|3aa4147fa2922416|42fcde6246c1aaba|787668912|report.docx*report_files*report.qmd|t20381.583288466s|s1215992b|1215992|file|local|vector|||21.86||
+data|stem|56adc5dff8514ebb|9959aaa7e3973957|46815c3dfdf363e4|33550471||t20381.586848459s|s1651796b|1651796|rds|local|vector|||0.31||
+plot|stem|d4a0cef47a3be338|275f9aa385cb3b0b|9ccdf7b6665ea5d9|874984291||t20381.5869655836s|s260254913b|260254913|rds|local|vector|||0.45||
+sum_by_classes|function|870a724be061589f
+plot_spectra_grid|function|037d4d558b5d5523
+.Random.seed|object|cdc1cb74cd2e94f7
+plot_class_stacks|function|ea15e9e7ce7af440
+add_molecular_classes|function|17cb1e992b46cc2b
+get_nmr_data|function|c1e84ea78e06dac2
+summed_data|stem||4c4b7ebf157ea512|2927da3f8b091a12|-1224559322||t20381.5869688743s||0|rds|local|vector|||0.09||class_col %in% names(df) is not TRUE
