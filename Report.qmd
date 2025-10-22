@@ -1,20 +1,19 @@
 ---
 title: "Report"
-
 format: docx
-execute:
-  echo: false
 ---
 
-We can use '{targets}' in Quarto by just reading the R objects into de document with 'tar_read()'
+We can use `{targets}` in Quarto by reading the R objects with `tar_read()`.
 
 ```{r}
+#| echo: true
 library(targets)
-tar_read(data)
+tar_read(summed_data)
 ```
 
 And not we plot the data
 
 ```{r}
+#| echo: true
 tar_read(plot)
 ```

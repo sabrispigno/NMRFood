@@ -1,9 +1,3 @@
-# ---- deps ----
-library(readxl)
-library(dplyr)
-library(ggplot2)
-library(gridExtra)
-
 # --------------------- 1) READ + FILTER + NORMALIZE --------------------- #
 get_nmr_data <- function(file, sheet = "datidef",
                          ppm_col = "ppm", ppm_min = 0, ppm_max = 200,
