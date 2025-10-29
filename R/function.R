@@ -1,3 +1,9 @@
+library(dplyr)
+library(readxl)
+library(ggplot2)
+library(gridExtra)
+library(grid)
+
 # --------------------- 1) READ + FILTER + NORMALIZE --------------------- #
 get_nmr_data <- function(file, sheet = "datidef",
                          ppm_col = "ppm", ppm_min = 0, ppm_max = 200,
@@ -14,7 +20,6 @@ get_nmr_data <- function(file, sheet = "datidef",
       df[sig_cols] <- sweep(df[sig_cols], 2, safe_div, "/")
     }
   }
-  # put ppm first
   df[, c(ppm_col, setdiff(names(df), ppm_col))]
 }
 
@@ -35,21 +40,10 @@ add_molecular_classes <- function(df, ppm_col = "ppm",
 sum_by_classes <- function(df, class_col = "MolecularClasses") {
   stopifnot(class_col %in% names(df))
   df[[class_col]] <- factor(df[[class_col]], levels = unique(df[[class_col]]))
-  
-  out <- df %>%
-    group_by(.data[[class_col]]) %>%
-    summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE)),
-              .groups = "drop")
-  
-  # reorder sample columns by magnitude of one selected class (descending)
-  if (!is.null(order_by_class) && order_by_class %in% out[[class_col]]) {
-    sample_cols <- setdiff(names(out), class_col)
-    ridx <- which(out[[class_col]] == order_by_class)
-    ord  <- order(-as.numeric(out[ridx, sample_cols]))
-    out  <- cbind(out[1], out[sample_cols[ord]])
-    names(out)[1] <- class_col
-  }
-  out
+  df %>%
+    dplyr::group_by(.data[[class_col]]) %>%
+    dplyr::summarise(dplyr::across(where(is.numeric), ~ sum(.x, na.rm = TRUE)),
+                     .groups = "drop")
 }
 
 # --------------------- 4a) FIG. 1 — SPECTRA GRID --------------------- #
@@ -63,7 +57,6 @@ plot_spectra_grid <- function(data,
   sig_cols <- setdiff(num_cols, c(ppm_col, exclude_cols))
   if (!length(sig_cols)) stop("No signal columns to plot.")
   
-  # common y limits
   y_min <- min(as.matrix(data[sig_cols]), na.rm = TRUE)
   y_max <- max(as.matrix(data[sig_cols]), na.rm = TRUE)
   
@@ -83,25 +76,16 @@ plot_spectra_grid <- function(data,
             axis.ticks = element_blank())
   })
   names(plots) <- sig_cols
-  
-  # optional multi-file export
-  if (!is.null(save_prefix)) {
-    # PDF
-    pdf(paste0(save_prefix, "_grid_plot.pdf"))
-    do.call(grid.arrange, c(plots, ncol = ncol))
-    dev.off()
-    # PNG
-    png(paste0(save_prefix, "_grid_plot.png"),
-        width = 16, height = 22, units = "cm", res = 400)
-    do.call(grid.arrange, c(plots, ncol = ncol))
-    dev.off()
-    # SVG
-    svglite::svglite(paste0(save_prefix, "_grid_plot.svg"), width = 16)
-    do.call(grid.arrange, c(plots, ncol = ncol))
-    dev.off()
-  }
-  
-  invisible(plots)
+  plots
+}
+
+arrange_spectra_grid <- function(plots,
+                                 ncol = 3,
+                                 save_prefix = NULL,
+                                 draw = TRUE) {
+  stopifnot(length(plots) > 0)
+  grid <- gridExtra::arrangeGrob(grobs = plots, ncol = ncol)
+  grid::grid.draw(grid)
 }
 
 # --------------------- 4b) FIG. 2 — STACKED PERCENT BARS --------------------- #
@@ -120,7 +104,7 @@ plot_class_stacks <- function(summed_data,
     colors <- NULL
   }
   
-  plots <- lapply(cols, function(col) {
+  plots_class <- lapply(cols, function(col) {
     p <- ggplot(summed_data, aes(x = "", y = .data[[col]], fill = .data[[class_col]])) +
       geom_bar(stat = "identity", color = "black", linewidth = 0.3,
                position = "fill", width = 0.3) +
@@ -132,28 +116,36 @@ plot_class_stacks <- function(summed_data,
             axis.text.y  = element_blank(),
             axis.line    = element_blank(),
             axis.ticks   = element_blank(),
-            legend.box   = element_blank())
+            legend.box   = element_blank(),
+            legend.position = "none")   # <- 🚫 remove legend here
     if (!is.null(colors)) p <- p + scale_fill_manual(values = colors, name = class_col)
     p
   })
-  names(plots) <- cols
-  
-  if (!is.null(save_prefix)) {
-    # PDF
-    pdf(paste0(save_prefix, "_histogrid.pdf"))
-    do.call(grid.arrange, c(plots, ncol = ncol))
-    dev.off()
-    # PNG
-    png(paste0(save_prefix, "_histogrid.png"),
-        width = 16, height = 20, units = "cm", res = 300)
-    do.call(grid.arrange, c(plots, ncol = ncol))
-    dev.off()
-    # SVG
-    svglite::svglite(paste0(save_prefix, "_histogrid.svg"), width = 16)
-    do.call(grid.arrange, c(plots, ncol = ncol))
-    dev.off()
-  }
-  
-  invisible(plots)
+  names(plots_class) <- cols
+  plots_class
 }
+
+
+arrange_classes_grid <- function(plots_class,
+                                 ncol = 3,
+                                 save_prefix = NULL,
+                                 draw = TRUE) {
+  stopifnot(length(plots_class) > 0)
+  grid <- gridExtra::arrangeGrob(grobs = plots_class, ncol = ncol)
+  grid::grid.draw(grid)
+}
+
+# --------------------- RUN --------------------- #
+data <- get_nmr_data("data/CollectionNMRFood.xlsx")
+data <- add_molecular_classes(data)
+summed_data <- sum_by_classes(data, class_col = "MolecularClasses")
+
+plots <- plot_spectra_grid(data)
+grid_plot <- arrange_spectra_grid(plots)
+grid_plot
+
+class_plot <- plot_class_stacks(summed_data)
+grid_class <- arrange_classes_grid(class_plot)
+grid_class
+grid.draw(grid_class)
 

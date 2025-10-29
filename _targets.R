@@ -50,23 +50,14 @@ tar_source()
 
 # Replace the target list below with your own:
 list(
-  tar_target(file, "data/CollectionNMRFood.xlsx", format="file"),
-  tar_target(data, get_nmr_data(file)),
-  tar_target(mol_class, add_molecular_classes(data)),
-  tar_target(summed_data, sum_by_classes(data)),
-  tar_target(plot, plot_spectra_grid(data)),
+  tar_target(file, "data/CollectionNMRFood.xlsx", format = "file"),
+  tar_target(data,      get_nmr_data(file)),                 # reads & filters
+  tar_target(mol_class, add_molecular_classes(data)),        # <-- creates MolecularClasses
+  tar_target(summed_data, sum_by_classes(mol_class)),        # <-- use mol_class here
+  tar_target(plot,plot_spectra_grid(data)),
+  tar_target(spectra_grid, arrange_spectra_grid(plot)),
   tar_target(plot_class, plot_class_stacks(summed_data)),
+  # tar_target(class_grid, arrange_classes_grid(plot_class)),
   tar_quarto(report, "report.qmd")
-  #tar_target(class_sum,build_class_sums(data)),
-  #tar_target(plot_class, plot_class_stacks(class_sum))
-  # tar_target( 
-  #   name = data,
-  #   command = tibble(x = rnorm(100), y = rnorm(100))
-  #   # format = "qs" # Efficient storage for general data objects.
-  # ),
-  # tar_target(
-  #   name = model,
-  #   command = coefficients(lm(y ~ x, data = data))
-  # )
 )
 

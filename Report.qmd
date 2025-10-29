@@ -1,8 +1,19 @@
 ---
-title: "Report"
+title: "NMR Analysis Report"
 format: docx
+execute:
+  echo: false
+  warning: false
+  message: false
 ---
 
+```{r setup}
+# Load necessary packages
+library(targets)
+library(ggplot2)
+library(gridExtra)
+library(grid)
+```
 We can use `{targets}` in Quarto by reading the R objects with `tar_read()`.
 
 ```{r}
@@ -11,9 +22,14 @@ library(targets)
 tar_read(summed_data)
 ```
 
-And not we plot the data
+
 
 ```{r}
 #| echo: true
-tar_read(plot)
+library(targets)
+# tar_read(spectra_grid)
+class_grid <- tar_read(class_grid)
+grid::grid.newpage() # <-- again, new page for clean figure
+grid::grid.draw(class_grid)
+# tar_read(class_grid)
 ```
